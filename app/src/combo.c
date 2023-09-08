@@ -30,6 +30,8 @@ struct combo_cfg {
     int32_t key_position_len;
     struct zmk_behavior_binding behavior;
     int32_t timeout_ms;
+    // when order dependant is set, combo keys must be pressed in the order they're specified in
+    bool order_dependant;
     // if slow release is set, the combo releases when the last key is released.
     // otherwise, the combo releases when the first key is released.
     bool slow_release;
@@ -122,6 +124,9 @@ static bool combo_active_on_layer(struct combo_cfg *combo, uint8_t layer) {
     return false;
 }
 
+/**
+ * takes a key position and a timestamp and adds combo candidates to the candidate list
+ */
 static int setup_candidates_for_first_keypress(int32_t position, int64_t timestamp) {
     int number_of_combo_candidates = 0;
     uint8_t highest_active_layer = zmk_keymap_highest_layer_active();
@@ -142,7 +147,7 @@ static int setup_candidates_for_first_keypress(int32_t position, int64_t timesta
 
 static int filter_candidates(int32_t position) {
     // this code iterates over candidates and the lookup together to filter in O(n)
-    // assuming they are both sorted on key_position_len, virtal_key_position
+    // assuming they are both sorted on key_position_len, virtual_key_position
     int matches = 0, lookup_idx = 0, candidate_idx = 0;
     while (lookup_idx < CONFIG_ZMK_COMBO_MAX_COMBOS_PER_KEY &&
            candidate_idx < CONFIG_ZMK_COMBO_MAX_COMBOS_PER_KEY) {
@@ -199,6 +204,11 @@ static inline bool candidate_is_completely_pressed(struct combo_cfg *candidate) 
         }
     }
     return true;
+}
+
+static inline bool candidate_next_key_pressed(struct combo_cfg *candidate) {
+    // we need to keep track of which keys are pressed on this combo, and make sure that they've
+    // been pressed in order
 }
 
 static int cleanup();
@@ -396,6 +406,7 @@ static void update_timeout_task() {
     }
 }
 
+// TODO: this is the function that I'm going to change
 static int position_state_down(const zmk_event_t *ev, struct zmk_position_state_changed *data) {
     int num_candidates;
     if (candidates[0].combo == NULL) {
@@ -417,6 +428,7 @@ static int position_state_down(const zmk_event_t *ev, struct zmk_position_state_
         cleanup();
         return ret;
     case 1:
+        // TODO: instead of this method, I need one that will check "is the next key pressed"
         if (candidate_is_completely_pressed(candidate_combo)) {
             fully_pressed_combo = candidate_combo;
             cleanup();
