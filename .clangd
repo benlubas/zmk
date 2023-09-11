@@ -1,0 +1,4 @@
+CompileFlags:
+  Compiler: /home/benlubas/.local/zephyr-sdk-0.15.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
+  add: --query-driver=/home/benlubas/.local/zephyr-sdk-0.15.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
+  CompilationDatabase: /home/benlubas/github/zmk/app/build/compile_commands.json
