@@ -206,10 +206,10 @@ static inline bool candidate_is_completely_pressed(struct combo_cfg *candidate) 
     return true;
 }
 
-static inline bool candidate_next_key_pressed(struct combo_cfg *candidate) {
-    // we need to keep track of which keys are pressed on this combo, and make sure that they've
-    // been pressed in order
-}
+// static inline bool candidate_next_key_pressed(struct combo_cfg *candidate) {
+//     // we need to keep track of which keys are pressed on this combo, and make sure that they've
+//     // been pressed in order
+// }
 
 static int cleanup();
 
