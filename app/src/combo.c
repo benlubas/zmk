@@ -76,8 +76,15 @@ int64_t timeout_task_timeout_at;
 
 // Store the combo key pointer in the combos array, one pointer for each key position
 // The combos are sorted shortest-first, then by virtual-key-position.
+
+// So it looks like for a combo like "xcvb" all four of those keys gets a pointer to the combo
+// in this list
+// I think for order dependant combos, we would only want to put the first key in the list, and then
+// the rest of the keys would be registered in the other functions.. ?
 static int initialize_combo(struct combo_cfg *new_combo) {
     for (int i = 0; i < new_combo->key_position_len; i++) {
+        if (new_combo->order_dependant && i > 0) continue;
+
         int32_t position = new_combo->key_positions[i];
         if (position >= ZMK_KEYMAP_LEN) {
             LOG_ERR("Unable to initialize combo, key position %d does not exist", position);
@@ -124,6 +131,16 @@ static bool combo_active_on_layer(struct combo_cfg *combo, uint8_t layer) {
     return false;
 }
 
+// make sure that the other key in the combo isn't pressed yet.
+static inline bool only_first_key_pressed(struct combo_cfg *combo) {
+    for (int i = 0; i < CONFIG_ZMK_COMBO_MAX_KEYS_PER_COMBO; i += 1) {
+        if (as_zmk_position_state_changed(pressed_keys[i])->position == combo->key_positions[1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /**
  * takes a key position and a timestamp and adds combo candidates to the candidate list
  */
@@ -135,7 +152,7 @@ static int setup_candidates_for_first_keypress(int32_t position, int64_t timesta
         if (combo == NULL) {
             return number_of_combo_candidates;
         }
-        if (combo_active_on_layer(combo, highest_active_layer)) {
+        if (combo_active_on_layer(combo, highest_active_layer) && (!combo->order_dependant || (combo->order_dependant && only_first_key_pressed(combo)))) {
             candidates[number_of_combo_candidates].combo = combo;
             candidates[number_of_combo_candidates].timeout_at = timestamp + combo->timeout_ms;
             number_of_combo_candidates++;
@@ -205,11 +222,6 @@ static inline bool candidate_is_completely_pressed(struct combo_cfg *candidate) 
     }
     return true;
 }
-
-// static inline bool candidate_next_key_pressed(struct combo_cfg *candidate) {
-//     // we need to keep track of which keys are pressed on this combo, and make sure that they've
-//     // been pressed in order
-// }
 
 static int cleanup();
 
@@ -406,7 +418,6 @@ static void update_timeout_task() {
     }
 }
 
-// TODO: this is the function that I'm going to change
 static int position_state_down(const zmk_event_t *ev, struct zmk_position_state_changed *data) {
     int num_candidates;
     if (candidates[0].combo == NULL) {
