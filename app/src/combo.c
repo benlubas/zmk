@@ -83,7 +83,8 @@ int64_t timeout_task_timeout_at;
 // the rest of the keys would be registered in the other functions.. ?
 static int initialize_combo(struct combo_cfg *new_combo) {
     for (int i = 0; i < new_combo->key_position_len; i++) {
-        if (new_combo->order_dependant && i > 0) continue;
+        if (new_combo->order_dependant && i > 0)
+            continue;
 
         int32_t position = new_combo->key_positions[i];
         if (position >= ZMK_KEYMAP_LEN) {
@@ -152,7 +153,9 @@ static int setup_candidates_for_first_keypress(int32_t position, int64_t timesta
         if (combo == NULL) {
             return number_of_combo_candidates;
         }
-        if (combo_active_on_layer(combo, highest_active_layer) && (!combo->order_dependant || (combo->order_dependant && only_first_key_pressed(combo)))) {
+        if (combo_active_on_layer(combo, highest_active_layer) &&
+            (!combo->order_dependant ||
+             (combo->order_dependant && only_first_key_pressed(combo)))) {
             candidates[number_of_combo_candidates].combo = combo;
             candidates[number_of_combo_candidates].timeout_at = timestamp + combo->timeout_ms;
             number_of_combo_candidates++;
@@ -306,6 +309,7 @@ static inline int release_combo_behavior(struct combo_cfg *combo, int32_t timest
     return behavior_keymap_binding_released(&combo->behavior, event);
 }
 
+// so this disallows two combos at the same time, right?
 static void move_pressed_keys_to_active_combo(struct active_combo *active_combo) {
     int combo_length = active_combo->combo->key_position_len;
     for (int i = 0; i < combo_length; i++) {
@@ -439,7 +443,6 @@ static int position_state_down(const zmk_event_t *ev, struct zmk_position_state_
         cleanup();
         return ret;
     case 1:
-        // TODO: instead of this method, I need one that will check "is the next key pressed"
         if (candidate_is_completely_pressed(candidate_combo)) {
             fully_pressed_combo = candidate_combo;
             cleanup();
